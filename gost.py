@@ -74,11 +74,15 @@ def gost_decrypt(ciphertext_b64, key):
     blocks = [ciphertext[i:i+8] for i in range(0, len(ciphertext), 8)]
     decrypted = b''.join([gost_decrypt_block(block, subkeys) for block in blocks])
 
-    try:
-        clean = unpad(decrypted)
-        return clean.decode('utf-8', errors='ignore')
-    except Exception:
-        return decrypted.decode('utf-8', errors='ignore')
+    if decrypted:
+        pad_len = decrypted[-1]
+        if (
+            1 <= pad_len <= 8 and
+            decrypted[-pad_len:] == bytes([pad_len]) * pad_len
+        ):
+            decrypted = decrypted[:-pad_len]  # padding valid, hapus
+
+    return decrypted.decode('utf-8', errors='ignore')
 
 
 def send_email(sender_email, app_password, to_email, subject, body):
